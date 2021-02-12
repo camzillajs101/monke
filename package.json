@@ -1,0 +1,16 @@
+{
+  "name": "monke",
+  "version": "1.0.0",
+  "description": "discord bot",
+  "main": "index.js",
+  "scripts": {
+    "test": "console.log(\"this works\")"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "discord.js": "^12.4.1",
+    "ffmpeg": "0.0.4",
+    "opusscript": "0.0.7"
+  }
+}
