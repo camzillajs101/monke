@@ -107,7 +107,7 @@ client.on('voiceStateUpdate', (oldMember,newMember) => {
 	}
 });
 
-client.login('Nzc1ODkxMzMzMTUwOTMzMDEy.X6s7HQ.Nt2F71845stSeTdMK89efMzy0jU');
+client.login(process.env.TOKEN);
 
 /*
 responds what do you mean by that
