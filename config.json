@@ -1,0 +1,40 @@
+{
+  "token": "Nzc1ODkxMzMzMTUwOTMzMDEy.X6s7HQ.uTHncA16zWmpDS6IqMvJecfBTkw",
+  "delayTimes": {
+    "min": 45000,
+  	"max": 450000
+  },
+  "vcs": {
+    "hotcocoaplace": "806025884657778708",
+  	"church": "792606152633745429",
+  	"cozyplace": "779579659250696222",
+  	"gaming": "779519829253947442",
+  	"btgeneral": "775902986383130658",
+    "studychannel": "810671974069174332"
+  },
+  "channels": {
+    "general": "728325501566844951",
+    "bot": "728575323725365339"
+  },
+  "people": {
+    "369224966761086986": "brandon",
+  	"391784359029637148": "brick",
+  	"741312297925869629": "thwifo",
+  	"445534456539774977": "jacket",
+  	"431927152548511753": "cheese",
+  	"476311917325975552": "lukk",
+  	"419607288559566850": "nate",
+  	"404759554048524298": "pucc",
+  	"216236260874911755": "unlucky",
+  	"360412564645216258": "gooch",
+  	"430201221023006732": "caleb",
+  	"144601613867286528": "corruption"
+  },
+  "allsounds": ["amongus","bathroom","can_anybody_hear_me","cheese","cough","dammit","joe_biden","laugh","osu","rap","spinning","stfu","typing","bitchass","cursing","earrape","heythwifo","lukk","meme","omg","ooaaoo","ping","porn","stretch","stupidinator","trolling","osu_long_1","osu_long_2","osu_long_3","hello","goodbye","weirdie","no","yes","deafened","yankees","burp1","burp2","burp3","sounddoesntexist","fnf","cookie","sneeth","cartoonwomen","greetings/brandon","greetings/brick","greetings/thwifo","greetings/jacket","greetings/cheese","greetings/lukk","greetings/nate","greetings/pucc","greetings/unlucky","greetings/gooch","greetings/caleb","greetings/corruption"],
+  "passive": ["amongus","bathroom","can_anybody_hear_me","cheese","cough","dammit","joe_biden","laugh","osu","rap","spinning","stfu","typing","bitchass","cursing","earrape","heythwifo","lukk","meme","omg","ooaaoo","ping","porn","stretch","stupidinator","trolling","weirdie","no","yes","deafened","yankees","burp1","burp2","burp3","fnf","cookie","sneeth","cartoonwomen"],
+  "info": {
+    "unknownvc": "That voice channel doesn't exist you unballer man!!!!!!!!!!!!",
+    "notinvc": "I'm not in a voice channel dummy!!!!!!!!!!!!",
+    "unknownsound": "That sound doesn't exist you unballer man!!!!!!!!!!!!"
+  }
+}

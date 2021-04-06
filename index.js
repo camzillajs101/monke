@@ -1,138 +1,158 @@
 const Discord = require('discord.js');
 const client = new Discord.Client();
 let ffmpeg = require('ffmpeg');
+let fs = require('fs');
+let colors = require('colors');
+const config = JSON.parse(fs.readFileSync('config.json','utf8'));
 
-const vcs = {
-	hotcocoaplace: '806025884657778708',
-	church: '792606152633745429',
-	cozyplace: '779579659250696222',
-	gaming: '779519829253947442',
-	btgeneral: '775902986383130658'
-}
-const sounds = ["bathroom","can_anybody_hear_me","cheese","cough","dammit","joe_biden","laugh","osu","rap","spinning","stfu","typing"];
-const delayTimes = {
-	min: 45000,
-	max: 450000
-}
-
-let vc, vccon;
-
-function playRandomSound(nosound){
-	if (!nosound){
-		playSound("random");
-	}
-	let delay = Math.round(Math.random() * (delayTimes.max - delayTimes.min) + delayTimes.min);
-	let nextdate = new Date(Date.now() + delay);
-	let nexttime = `${nextdate.getHours()}:${nextdate.getMinutes()}:${nextdate.getSeconds()}`;
-	console.log(`next sound at: ${nexttime}`);
-	setTimeout(function(){
-		if (vccon !== undefined){
-			playRandomSound();
-		}
-	},delay);
-}
-
-function playSound(name,message){
-	if (vccon !== undefined){
-		if (sounds.includes(name)){
-			console.log(`playing sound: ${name}`);
-			vccon.play(`sound/${name}.mp3`);
-		} else if (name === "random"){
-			let random = Math.round(Math.random()*(sounds.length-1));
-			console.log(`playing sound: ${sounds[random]}`);
-			vccon.play(`sound/${sounds[random]}.mp3`);
-		} else {
-			message.channel.send("That sound doesn't exist you unballer man!!!!!!!!!!!!");
-		}
-	} else {
-		message.channel.send("I'm not in a voice channel you unballer man!!!!!!!!!!!!");
-	}
+function log(message){
+  console.log(` ${new Date(Date.now()-18000000).toLocaleTimeString()} `.inverse+" "+message);
 }
 
 client.once('ready', () => {
-	console.log('Ready!');
+  log("Ready!".bgBlue);
 });
 
+client.login(config.token);
+
+let vc, vccon, currentTimeout, dispatcher, queue = [];
+
+function genQueue(){
+  for (let i = 0; i < config.passive.length; i++) queue[i] = i; // generate array
+  for (let i in queue){ // shuffle array
+    let random = Math.floor(Math.random() * config.passive.length);
+    let temp = queue[i];
+    queue[i] = queue[random];
+    queue[random] = temp;
+  }
+}
+
 client.on('message', message => {
-	let text = message.content.toLowerCase();
+  if (message.author.bot) return; // if the bot said it, disregard
 
-	if (message.author.username !== "BrandonBot"){
-		if (text.includes("hello")){
-			message.channel.send("https://cdn.discordapp.com/attachments/728325501566844951/809301951485313054/hello.mov");
-		}
-		if (text.includes("goodbye")){
-			message.channel.send("https://cdn.discordapp.com/attachments/791387944828141599/809312250292469800/video0.mov");
-		}
+  let text = message.content.toLowerCase();
+
+  if (text.includes("hello")){
+		message.channel.send("https://cdn.discordapp.com/attachments/728325501566844951/809301951485313054/hello.mov");
+	}
+	if (text.includes("goodbye")){
+		message.channel.send("https://cdn.discordapp.com/attachments/791387944828141599/809312250292469800/video0.mov");
 	}
 
-	if (message.content.substring(0,4) === "JOIN"){
-		switch (message.content){
-			case "JOIN!!!":
-				vc = client.channels.cache.get(vcs.hotcocoaplace);
-			break;
-			case "JOIN CHURCH!!!":
-				vc = client.channels.cache.get(vcs.church);
-			break;
-			case "JOIN GAMING!!!":
-				vc = client.channels.cache.get(vcs.gaming);
-			break;
-			case "JOIN COZY PLACE!!!":
-				vc = client.channels.cache.get(vcs.cozyplace);
-			break;
-		}
-		vc.join().then(connection => {
-			vccon = connection;
-			vccon.play("sound/hello.mp3");
-			playRandomSound(true);
-		});
-	} else if (message.content === "LEAVE!!!!"){
-		vccon.play("sound/goodbye.mp3").on("finish", () => {
-			vc.leave();
-			vccon = undefined;
-		});
-	}
+  if (text.startsWith("join")){
+    text = text.slice(5).replace(/\s/g, ''); // remove spaces
 
-	if (message.content.substring(0,4) === "play"){
-		playSound(message.content.slice(5),message);
-	}
+    vc = client.channels.cache.get(text === "" ? config.vcs.hotcocoaplace : config.vcs[text]);
+
+    if (vc === undefined){ // make sure vc is valid
+      message.channel.send(config.info.unknownvc);
+    } else {
+      vc.join().then(connection => {
+        log(`Joined ${text}`.bgGreen.black);
+        vccon = connection;
+        dispatcher = vccon.play("sound/hello.mp3").on('finish', () => {
+          genQueue();
+          playPassive(queue,0);
+        });
+      });
+    }
+  }
+  if (text.startsWith("leave") && vccon !== undefined){
+    vccon.play("sound/goodbye.mp3").on('finish', () => {
+      vc.leave();
+      clearTimeout(currentTimeout);
+      vccon = undefined, queue = []; // reset connection and queue to signify leaving vc
+      log(`Left vc`.bgGreen.black);
+    });
+  }
+
+  if (text.startsWith("play")){
+    let name = text.slice(5);
+    if (vccon !== undefined){
+      if (vccon.speaking.bitfield){
+        dispatcher.end();
+      }
+      if (config.allsounds.includes(name)){
+        dispatcher = vccon.play("sound/"+name+".mp3");
+        log(`Playing sound ${name} (requested)`.magenta);
+      } else if (name === "random"){
+        let random = Math.round(Math.random()*(config.passive.length-1));
+        dispatcher = vccon.play("sound/"+config.passive[random]+".mp3");
+        log(`Playing sound ${config.passive[random]} (requested, random)`.magenta);
+      } else {
+        message.channel.send(config.info.unknownsound);
+      }
+    } else {
+      message.channel.send(config.info.notinvc);
+      if (!vccon.speaking.bitfield){
+        dispatcher = vccon.play("sound/sounddoesntexist.mp3");
+      }
+    }
+  }
+
+  if (text.startsWith("stop") && dispatcher){
+    dispatcher.end();
+  }
+
+  if (text.startsWith("list")){ // this is not very clean or dry
+    let list;
+    let listtype = text.slice(5);
+    switch (listtype){
+      case "passive":
+        list = "These are all the sounds I play on my own: ```"
+        for (let i of config.passive){
+          list = list.concat("\n",i);
+        }
+      break;
+      default:
+        list = "These are all the sounds I can play: ```"
+        for (let i of config.allsounds){
+          list = list.concat("\n",i)
+        }
+    }
+    list = list.concat("```");
+
+    message.channel.send(list);
+  }
 });
 
 client.on('voiceStateUpdate', (oldMember,newMember) => {
-	if (vccon !== undefined){
-		if (oldMember.channel === null && newMember.channel !== null){ // someone entered
-			vccon.play("sound/hello.mp3");
-		} else if (oldMember.channel !== null && newMember.channel === null){ // someone left
-			vccon.play("sound/goodbye.mp3");
-		}
-	}
+  if (vccon !== undefined){
+    if (vccon.speaking.bitfield){
+      dispatcher.end();
+    }
+    if (oldMember.channel === null && newMember.channel !== null){ // someone entered
+      let userid = newMember.id;
+      let username = newMember.guild.members.cache.get(userid).user.username;
+      if (config.people[userid] !== undefined){ // play sound, either greeting or generic hello
+        log(`${username} joined, playing greeting`.green);
+        vccon.play(`sound/greetings/${config.people[userid]}.mp3`);
+      } else {
+        log(`${username} joined (unknown)`.green);
+        vccon.play("sound/hello.mp3");
+      }
+    } else if (oldMember.channel !== null && newMember.channel === null){ // someone left
+      log(`${oldMember.guild.members.cache.get(oldMember.id).user.username} left`.red);
+      vccon.play("sound/goodbye.mp3");
+    }
+  }
 });
 
-client.login(process.env.TOKEN);
-
-/*
-responds what do you mean by that
-
-let author = message.author.username;
-let text = message.content.toLowerCase();
-
-if (author === "cheese" || (author === "the gooch man" && text === "test")){
-	console.log(`Replying to ${author} (ID ${message.author.id})'s message (${text})`); // log reply
-
-	if (text === "what do you mean by that" || text === "what do you mean by that?" || text.includes("https://cdn.discordapp.com/attachments/792554114798190613/807676879791849512/balzac.mp4")){
-		message.channel.send("fuck you");
-	} else {
-		message.channel.send("https://cdn.discordapp.com/attachments/792554114798190613/807676879791849512/balzac.mp4");
-	}
+function playPassive(queue,index){ // delay first, then sound to avoid overlapping at call join
+  let delay = Math.round(Math.random() * (config.delayTimes.max - config.delayTimes.min) + config.delayTimes.min);
+  log(`Next sound at: ${new Date(Date.now()+delay).toLocaleTimeString()} (${delay} ms)`.cyan);
+  currentTimeout = setTimeout(() => {
+    log(`Playing sound ${config.passive[queue[index]]} (random)`.magenta);
+    dispatcher = vccon.play(`sound/${config.passive[queue[index]]}.mp3`).on('finish', () => {
+      if (queue !== []){
+        if (queue[index+1] === undefined){
+          log("Resetting queue".green);
+          genQueue();
+          playPassive(queue,0);
+        } else {
+          playPassive(queue,index+1);
+        }
+      }
+    });
+  },delay);
 }
-
-bauer bot
-
-let text = message.content.toLowerCase();
-if (text.includes("trevor bauer") && message.author.username !== "BauerBot"){
-	message.channel.send("Trevor Bauer");
-} */
-
-/* IDs:
-360412564645216258: the gooch man#8842
-369224966761086986: Lidiloth#4377
-*/
